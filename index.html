@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Meeting Room Booking</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: auto; }
+    label, select, input { display: block; width: 100%; margin-bottom: 1em; }
+    button { padding: .5em 1em; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+
+<h1>Book a Meeting Room</h1>
+<form id="bookingForm">
+  <label>Date
+    <input type="date" id="date" required />
+  </label>
+
+  <label>Room
+    <select id="room"></select>
+  </label>
+
+  <label>Start Time
+    <input type="time" id="startTime" required />
+  </label>
+
+  <label>End Time
+    <input type="time" id="endTime" required />
+  </label>
+
+  <label>Your Email
+    <input type="email" id="email" required />
+  </label>
+
+  <button type="submit">Book</button>
+</form>
+
+<div id="msg"></div>
+
+<script>
+const api = 'http://localhost:4000/api';
+
+// populate rooms
+fetch(api + '/rooms')
+  .then(r => r.json())
+  .then(rooms => {
+    const sel = document.getElementById('room');
+    rooms.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r._id;
+      opt.textContent = `${r.name} (${r.capacity} seats)`;
+      sel.append(opt);
+    });
+  });
+
+document.getElementById('bookingForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
+  msg.className = '';
+
+  const payload = {
+    date:      document.getElementById('date').value,
+    roomId:    document.getElementById('room').value,
+    startTime: document.getElementById('startTime').value,
+    endTime:   document.getElementById('endTime').value,
+    email:     document.getElementById('email').value
+  };
+
+  const res  = await fetch(api + '/bookings', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const body = await res.json();
+  if (res.ok) {
+    msg.textContent = 'Booked! Confirmation sent to your email.';
+    msg.className   = 'success';
+    e.target.reset();
+  } else {
+    msg.textContent = body.error || 'Error occurred';
+    msg.className   = 'error';
+  }
+});
+</script>
+
+</body>
+</html>
